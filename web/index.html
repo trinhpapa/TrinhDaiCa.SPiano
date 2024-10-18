@@ -214,18 +214,18 @@
             </div>
         </div>
         <div class="piano-key-container">
-            <button class="piano-key" data-sound="C"></button>
-            <button class="piano-key piano-key__sharp" data-sound="C#"></button>
-            <button class="piano-key" data-sound="D"></button>
-            <button class="piano-key piano-key__sharp" data-sound="D#"></button>
-            <button class="piano-key" data-sound="E"></button>
-            <button class="piano-key" data-sound="F"></button>
-            <button class="piano-key piano-key__sharp" data-sound="F#"></button>
-            <button class="piano-key" data-sound="G"></button>
-            <button class="piano-key piano-key__sharp" data-sound="G#"></button>
-            <button class="piano-key" data-sound="A"></button>
-            <button class="piano-key piano-key__sharp" data-sound="A#"></button>
-            <button class="piano-key" data-sound="B"></button>
+            <button class="piano-key" data-sound="C4"></button>
+            <button class="piano-key piano-key__sharp" data-sound="C#4"></button>
+            <button class="piano-key" data-sound="D4"></button>
+            <button class="piano-key piano-key__sharp" data-sound="D#4"></button>
+            <button class="piano-key" data-sound="E4"></button>
+            <button class="piano-key" data-sound="F4"></button>
+            <button class="piano-key piano-key__sharp" data-sound="F#4"></button>
+            <button class="piano-key" data-sound="G4"></button>
+            <button class="piano-key piano-key__sharp" data-sound="G#4"></button>
+            <button class="piano-key" data-sound="A4"></button>
+            <button class="piano-key piano-key__sharp" data-sound="A#4"></button>
+            <button class="piano-key" data-sound="B4"></button>
         </div>
     </section>
     <script>
@@ -259,12 +259,35 @@
             return [index1, index2];
         }
 
-        function randomNotes() {
-            const notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5", "A5", "B5"];
-            const [index1, index2] = getRandomIndexes(notes);
-            const list1 = notes.slice(0, index1 + 1);
-            const list2 = notes.slice(index2);
-            return [list1, list2];
+        // Hàm để randomize một mảng
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Hàm để tạo danh sách nốt nhạc và chia ra cho sol staff và fa staff
+        function createNotes() {
+            const notes = ["C", "D", "E", "F", "G", "A", "B", "C", "D", "E"];
+            const solStaff = [];
+            const faStaff = [];
+
+            // Chia danh sách nốt nhạc thành hai phần
+            for (let i = 0; i < notes.length; i++) {
+                if (i % 2 === 0) {
+                    solStaff.push(notes[i] + '5'); // Thêm nốt vào sol staff với octave 5
+                } else {
+                    faStaff.push(notes[i] + '4'); // Thêm nốt vào fa staff với octave 4
+                }
+            }
+
+            // Randomize các nốt nhạc trong mỗi phần
+            const randomizedSolStaff = shuffleArray(solStaff);
+            const randomizedFaStaff = shuffleArray(faStaff);
+
+            return [randomizedSolStaff, randomizedFaStaff];
         }
 
         function checkSolLineOrBar(note) {
@@ -305,49 +328,63 @@
             }
         }
 
-        let notes = randomNotes();
-        console.log(notes[0]);
+        const [solStaffNotes, faStaffNotes] = createNotes();
+        console.log("Sol Staff Notes:", solStaffNotes);
+        console.log("Fa Staff Notes:", faStaffNotes);
 
-        document.getElementById("solStaff").querySelectorAll(".line").forEach((note, index) => {
-            for (let i = 0; i < notes[0].length; i++) {
-                note.setAttribute("data-note", notes[0][i]);
-                const line = mapNoteToSolLine(notes[0][i]);
-                if (note.getAttribute("data-line") == line) {
+        // document.getElementById("solStaff").querySelectorAll(".line").forEach((note, index) => {
+        //     for (let i = 0; i < notes[0].length; i++) {
+        //         note.setAttribute("data-note", notes[0][i]);
+        //         const line = mapNoteToSolLine(notes[0][i]);
+        //         if (note.getAttribute("data-line") == line) {
+        //             let renderNote = document.createElement("div");
+        //             renderNote.classList.add("note");
+        //             renderNote.classList.add(checkSolLineOrBar(notes[0][i]));
+        //             renderNote.innerHTML = "&#9834;";
+        //             note.appendChild(renderNote);
+        //         }
+        //     }
+        // });
+
+        const combinedNotes = shuffleArray([...solStaffNotes, ...faStaffNotes]);
+        console.log("Combined Notes:", combinedNotes);
+
+        // Render các nốt nhạc vào đúng vị trí trong staff
+        document.addEventListener("DOMContentLoaded", () => {
+            const solStaff = document.getElementById("solStaff");
+            const faStaff = document.getElementById("faStaff");
+
+            let globalIndex = 0;
+
+            combinedNotes.forEach((note, index) => {
+                if (note.endsWith('5')) {
+                    const line = mapNoteToSolLine(note);
+                    const solLine = solStaff.querySelector(`.line[data-line="${line}"]`);
                     let renderNote = document.createElement("div");
                     renderNote.classList.add("note");
-                    renderNote.classList.add(checkSolLineOrBar(notes[0][i]));
+                    renderNote.classList.add(checkSolLineOrBar(note));
                     renderNote.innerHTML = "&#9834;";
-                    note.appendChild(renderNote);
+                    renderNote.style.left = `${index == 0 ? 80 : 40 * (index + 1)}px`;
+                    solLine.appendChild(renderNote);
+                } else {
+                    const line = mapNoteToSolLine(note) - 1;
+                    console.log(note, line);
+                    const faLine = faStaff.querySelector(`.line[data-line="${line}"]`);
+                    let renderNote = document.createElement("div");
+                    renderNote.classList.add("note");
+                    renderNote.classList.add(checkSolLineOrBar(note));
+                    renderNote.innerHTML = "&#9834;";
+                    renderNote.style.left = `${index == 0 ? 80 : 40 * (index + 1)}px`;
+                    faLine.appendChild(renderNote);
                 }
-            }
-        });
-
-        document.getElementById("faStaff").querySelectorAll(".line").forEach((note, index) => {
-            // for (let i = 0; i < notes[1].length; i++) {
-            //     if (i == solRandomIndex) {
-            //         note.setAttribute("data-note", notes[i]);
-            //         const line = mapNoteToSolLine(notes[i]);
-            //         console.log("F: " + notes[i]);
-            //         if (note.getAttribute("data-line") == line) {
-            //             let renderNote = document.createElement("div");
-            //             renderNote.classList.add("note");
-            //             renderNote.classList.add(checkSolLineOrBar(notes[i]));
-            //             renderNote.innerHTML = "&#9834;";
-            //             note.appendChild(renderNote);
-            //         }
-            //     }
-            // }
+            });
         });
 
         const synth = new Tone.Synth().toMaster();
         document.querySelectorAll('.piano-key').forEach(key => {
             key.addEventListener('mousedown', () => {
                 const note = key.getAttribute('data-sound');
-                synth.triggerAttackRelease(note, '4n');
-
-                if (note == activeNote) {
-                    document.querySelector('.note').style.left = `${key.offsetLeft}px`;
-                }
+                synth.triggerAttackRelease(note, '8n');
             });
         });
     </script>
