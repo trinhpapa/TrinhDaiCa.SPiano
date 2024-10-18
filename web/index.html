@@ -12,7 +12,7 @@
 
         body {
             margin: 0;
-            overflow: hidden;
+            /* overflow: hidden; */
             user-select: none;
             touch-action: manipulation;
         }
@@ -33,15 +33,27 @@
             background: linear-gradient(145deg, #1a1a1a, #1d1d1d 25%, #000000 50%, #1d1d1d 75%, #1a1a1a);
             border-bottom: 1px solid #0d0d0d;
             order: -1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
         }
 
+        .setting-icon {
+            font-size: 30px;
+            color: white;
+            padding: 0 20px;
+            cursor: pointer;
+        }
+
+        .setting-icon__flip {
+            transform: rotateY(180deg);
+        }
 
         .piano-key-container {
-            height: 380px;
+            height: 300px;
             position: relative;
             background-color: #f0f0f0;
-            border-top: 3px solid #e93838;
-            /* font-size: 0; */
+            border-top: 3px solid #bd2727;
         }
 
         .piano-key {
@@ -64,7 +76,7 @@
         .piano-key__sharp {
             position: absolute;
             color: white;
-            height: 50%;
+            height: 60%;
             z-index: 1;
             background-color: #292929;
         }
@@ -141,37 +153,63 @@
             font-size: 58px;
         }
 
-        .note.d {
-            top: -2%;
+        .sol-staff .note.bar {
+            top: -39px;
+            left: 80px;
+        }
+
+        .sol-staff .note.staff-line {
+            top: -46px;
+            left: 80px;
+        }
+
+        .fa-staff .note.bar {
+            top: -40px;
+            left: 80px;
+        }
+
+        .fa-staff .note.staff-line {
+            top: -47px;
             left: 80px;
         }
     </style>
 </head>
 
 <body>
-    <section class="app">
-        <div class="setting"></div>
+    <section class="app" id="app">
+        <div class="setting">
+            <div class="setting-icon setting-icon__flip" id="fullScreen">&#8689;</div>
+        </div>
         <div class="counter"></div>
         <div class="player">
-            <div class="staff">
+            <div class="staff sol-staff" id="solStaff">
                 <div class="clef sol-clef">&#119070;</div>
                 <div class="lines">
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="note d">&#9834;</div>
+                    <div class="line" data-line="5">
+                    </div>
+                    <div class="line" data-line="4">
+                    </div>
+                    <div class="line" data-line="3">
+                    </div>
+                    <div class="line" data-line="2">
+                    </div>
+                    <div class="line" data-line="1">
+                    </div>
                 </div>
             </div>
-            <div class="staff">
+            <div class="staff fa-staff" id="faStaff">
                 <div class="clef fa-clef">&#119074;</div>
                 <div class="lines">
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
-                    <div class="line"></div>
+                    <div class="line" data-line="5">
+                    </div>
+                    <div class="line" data-line="4">
+                    </div>
+                    <div class="line" data-line="3">
+                    </div>
+                    <div class="line" data-line="2">
+                    </div>
+                    <div class="line" data-line="1">
+                    </div>
                 </div>
             </div>
         </div>
@@ -196,8 +234,8 @@
             let pianoKeys = document.querySelectorAll(".piano-key");
             pianoKeys.forEach((key, index) => {
                 if (key.classList.contains("piano-key__sharp")) {
-                    key.style.width = `${bodyWidth / 7 * 0.6}px`;
-                    key.style.marginLeft = ` -${bodyWidth / 7 * 0.35}px`;
+                    key.style.width = `${bodyWidth / 7 * 0.7}px`;
+                    key.style.marginLeft = ` -${bodyWidth / 7 * 0.4}px`;
                     return;
                 }
                 key.style.width = `${bodyWidth / 7 - 3.6}px`;
@@ -206,6 +244,113 @@
     </script>
 
     <script src="Tone.js"></script>
+    <script>
+        function getRandomIndex(max) {
+            return Math.floor(Math.random() * max);
+        }
+
+        // Hàm để lấy ngẫu nhiên hai danh sách chỉ số mà không trùng nhau
+        function getRandomIndexes(notes) {
+            let index1 = getRandomIndex(notes.length);
+            let index2;
+            do {
+                index2 = getRandomIndex(notes.length);
+            } while (index1 === index2);
+            return [index1, index2];
+        }
+
+        function randomNotes() {
+            const notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5", "A5", "B5"];
+            const [index1, index2] = getRandomIndexes(notes);
+            const list1 = notes.slice(0, index1 + 1);
+            const list2 = notes.slice(index2);
+            return [list1, list2];
+        }
+
+        function checkSolLineOrBar(note) {
+            let noteName = note.slice(0, -1);
+            let noteMajor = note.slice(-1);
+            if (noteName == "C" || noteName == "E" || noteName == "G" || noteName == "A") {
+                if (noteMajor == 5) {
+                    return "staff-line";
+                } else {
+                    return "bar";
+                }
+            }
+            if (noteMajor == 5) {
+                return "bar";
+            } else {
+                return "staff-line";
+            }
+        }
+
+        function mapNoteToSolLine(note) {
+            let noteName = note.slice(0, -1);
+            let noteMajor = note.slice(-1);
+            switch (noteName) {
+                case "C":
+                    return noteMajor == 5 ? 1 : 4;
+                case "D":
+                    return noteMajor == 5 ? 1 : 4;
+                case "E":
+                    return noteMajor == 5 ? 1 : 4;
+                case "F":
+                    return noteMajor == 5 ? 2 : 5;
+                case "G":
+                    return noteMajor == 5 ? 2 : 5;
+                case "A":
+                    return noteMajor == 5 ? 3 : 5;
+                case "B":
+                    return noteMajor == 5 ? 3 : 5;
+            }
+        }
+
+        let notes = randomNotes();
+        console.log(notes[0]);
+
+        document.getElementById("solStaff").querySelectorAll(".line").forEach((note, index) => {
+            for (let i = 0; i < notes[0].length; i++) {
+                note.setAttribute("data-note", notes[0][i]);
+                const line = mapNoteToSolLine(notes[0][i]);
+                if (note.getAttribute("data-line") == line) {
+                    let renderNote = document.createElement("div");
+                    renderNote.classList.add("note");
+                    renderNote.classList.add(checkSolLineOrBar(notes[0][i]));
+                    renderNote.innerHTML = "&#9834;";
+                    note.appendChild(renderNote);
+                }
+            }
+        });
+
+        document.getElementById("faStaff").querySelectorAll(".line").forEach((note, index) => {
+            // for (let i = 0; i < notes[1].length; i++) {
+            //     if (i == solRandomIndex) {
+            //         note.setAttribute("data-note", notes[i]);
+            //         const line = mapNoteToSolLine(notes[i]);
+            //         console.log("F: " + notes[i]);
+            //         if (note.getAttribute("data-line") == line) {
+            //             let renderNote = document.createElement("div");
+            //             renderNote.classList.add("note");
+            //             renderNote.classList.add(checkSolLineOrBar(notes[i]));
+            //             renderNote.innerHTML = "&#9834;";
+            //             note.appendChild(renderNote);
+            //         }
+            //     }
+            // }
+        });
+
+        const synth = new Tone.Synth().toMaster();
+        document.querySelectorAll('.piano-key').forEach(key => {
+            key.addEventListener('mousedown', () => {
+                const note = key.getAttribute('data-sound');
+                synth.triggerAttackRelease(note, '4n');
+
+                if (note == activeNote) {
+                    document.querySelector('.note').style.left = `${key.offsetLeft}px`;
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
